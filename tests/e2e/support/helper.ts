@@ -14,8 +14,8 @@ export const team = {
 } as const;
 
 export const secondTeam = {
-  name: 'BoxyHQ',
-  slug: 'boxyhq',
+  name: 'Ory',
+  slug: 'ory',
 } as const;
 
 export async function purgeOryIdentities() {

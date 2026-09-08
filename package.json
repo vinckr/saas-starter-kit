@@ -8,6 +8,7 @@
   "scripts": {
     "release": "git checkout release && git merge origin/main && release-it && git checkout main && git merge origin/release && git push origin main",
     "setup": "node scripts/setup.mjs",
+    "setup:dev": "npm run setup && npm run dev",
     "seed": "tsx --env-file=.env prisma/seed.ts",
     "dev": "next dev --port 4002",
     "build": "prisma generate && prisma db push && next build",

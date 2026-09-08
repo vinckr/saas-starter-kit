@@ -1,7 +1,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/boxyhq/jackson/assets/66887028/871d9c0f-d351-49bb-9458-2542830d7910">
   <source media="(prefers-color-scheme: light)" srcset="https://github.com/boxyhq/jackson/assets/66887028/4073c181-0653-4d5b-b74f-e7e84fe79da8">
-  <img alt="BoxyHQ Banner" src="https://github.com/boxyhq/jackson/assets/66887028/b40520b7-dbce-400b-88d3-400d1c215ea1">
+  <img alt="Ory Enterprise SaaS Starter Kit" src="https://github.com/boxyhq/jackson/assets/66887028/b40520b7-dbce-400b-88d3-400d1c215ea1">
 </picture>
 
 # ⭐ Enterprise SaaS Starter Kit
@@ -21,7 +21,7 @@ Please star ⭐ the repo if you want us to continue developing and improving the
 
 ## 📖 Additional Resources
 
-Video - [BoxyHQ's SaaS Starter Kit: Your Ultimate Enterprise-Compliant Boilerplate](https://www.youtube.com/watch?v=oF8QIwQIhyo) <br>
+Video - [Ory-powered SaaS Starter Kit: Your Enterprise-Ready Boilerplate](https://www.youtube.com/watch?v=oF8QIwQIhyo) <br>
 Blog - [Enterprise-ready Saas Starter Kit](https://boxyhq.com/blog/enterprise-ready-saas-starter-kit)
 
 Next.js-based SaaS starter kit saves you months of development by starting you off with all the features that are the same in every product, so you can focus on what makes your app unique.
@@ -86,7 +86,7 @@ Please follow these simple steps to get a local copy up and running.
 
 #### 1. Setup
 
-- [Fork](https://github.com/boxyhq/saas-starter-kit/fork) the repository
+- [Fork](https://github.com/boxyhq/saas-starter-kit/fork) the Ory-powered repository
 - Clone the repository by using this command:
 
 ```bash
@@ -117,6 +117,12 @@ Then start the app:
 
 ```bash
 npm run dev
+```
+
+Or run the setup and start the app in one command:
+
+```bash
+npm run setup:dev
 ```
 
 Demo logins (seeded):

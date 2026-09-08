@@ -123,7 +123,7 @@ const SSO: NextPageWithLayout = () => {
                 type="email"
                 label="Email"
                 name="email"
-                placeholder="user@boxyhq.com"
+                placeholder="user@ory.com"
                 value={formik.values.email}
                 error={formik.touched.email ? formik.errors.email : undefined}
                 onChange={formik.handleChange}
@@ -133,7 +133,7 @@ const SSO: NextPageWithLayout = () => {
                 type="text"
                 label="Team slug"
                 name="slug"
-                placeholder="boxyhq"
+                placeholder="ory"
                 value={formik.values.slug}
                 descriptionText="Contact your administrator to get your team slug"
                 error={formik.touched.slug ? formik.errors.slug : undefined}
