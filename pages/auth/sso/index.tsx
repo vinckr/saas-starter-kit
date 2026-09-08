@@ -1,13 +1,10 @@
 import { AuthLayout } from '@/components/layouts';
-import { InputWithLabel, Loading } from '@/components/shared';
-import env from '@/lib/env';
+import { InputWithLabel } from '@/components/shared';
 import { useFormik } from 'formik';
-import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import { signIn, useSession } from 'next-auth/react';
+import { GetServerSidePropsContext } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import { type ReactElement, useState } from 'react';
 import { Button } from 'react-daisyui';
 import { toast } from 'react-hot-toast';
@@ -16,12 +13,42 @@ import * as Yup from 'yup';
 import Head from 'next/head';
 import { maxLengthPolicies } from '@/lib/common';
 
-const SSO: NextPageWithLayout<
-  InferGetServerSidePropsType<typeof getServerSideProps>
-> = ({ jacksonProductId }) => {
+async function startKratosSSO() {
+  const origin = window.location.origin;
+
+  const flowRes = await fetch(`${origin}/self-service/login/browser`, {
+    headers: { accept: 'application/json' },
+    credentials: 'include',
+  });
+  const flow = await flowRes.json();
+  const csrfToken = flow?.ui?.nodes?.find(
+    (n: any) => n?.attributes?.name === 'csrf_token'
+  )?.attributes?.value;
+
+  const submitRes = await fetch(flow.ui.action, {
+    method: 'POST',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      method: 'oidc',
+      provider: 'sso',
+      csrf_token: csrfToken,
+    }),
+  });
+
+  const body = await submitRes.json().catch(() => ({}));
+  const redirect = body?.redirect_browser_to;
+
+  if (redirect) {
+    window.location.href = redirect;
+    return;
+  }
+
+  throw new Error('Unable to start SSO login.');
+}
+
+const SSO: NextPageWithLayout = () => {
   const { t } = useTranslation('common');
-  const { status } = useSession();
-  const router = useRouter();
   const [useEmail, setUseEmail] = useState(true);
 
   const formik = useFormik({
@@ -55,26 +82,33 @@ const SSO: NextPageWithLayout<
         toast.error(error.message);
         return;
       }
+
       if (data.useSlug) {
         formik.resetForm();
         setUseEmail(false);
         toast.error(t('multiple-sso-teams'));
         return;
       }
-      await signIn('boxyhq-saml', undefined, {
-        tenant: data.teamId,
-        product: jacksonProductId,
+
+      const startRes = await fetch('/api/auth/sso/start', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ teamId: data.teamId }),
       });
+
+      if (!startRes.ok) {
+        const { error: startError } = await startRes.json().catch(() => ({}));
+        toast.error(startError?.message || 'Unable to start SSO login.');
+        return;
+      }
+
+      try {
+        await startKratosSSO();
+      } catch (err: any) {
+        toast.error(err.message || 'Unable to start SSO login.');
+      }
     },
   });
-
-  if (status === 'loading') {
-    return <Loading />;
-  }
-
-  if (status === 'authenticated') {
-    router.push(env.redirectIfAuthenticated);
-  }
 
   return (
     <>
@@ -123,9 +157,6 @@ const SSO: NextPageWithLayout<
           <Link href="/auth/login" className="btn btn-outline w-full">
             {t('sign-in-with-password')}
           </Link>
-          <Link href="/auth/magic-link" className="btn btn-outline w-full">
-            {t('sign-in-with-email')}
-          </Link>
         </div>
       </div>
     </>
@@ -149,7 +180,6 @@ export async function getServerSideProps({
   return {
     props: {
       ...(locale ? await serverSideTranslations(locale, ['common']) : {}),
-      jacksonProductId: env.jackson.productId,
     },
   };
 }

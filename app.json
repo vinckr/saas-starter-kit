@@ -5,11 +5,22 @@
   "logo": "https://boxyhq.com/img/logo.png",
   "keywords": ["saas", "starter", "kit", "enterprise"],
   "env": {
-    "NEXTAUTH_URL": {
-      "description": "Next.js authentication URL."
+    "ORY_SDK_URL": {
+      "description": "Ory Kratos public API URL (Ory Network or a self-hosted Kratos)."
     },
-    "NEXTAUTH_SECRET": {
-      "description": "Next.js authentication secret."
+    "ORY_ADMIN_URL": {
+      "description": "Ory Kratos admin API URL."
+    },
+    "NEXT_PUBLIC_ORY_SDK_URL": {
+      "description": "Browser-facing Ory Kratos public API URL."
+    },
+    "POLIS_OPENID_PRIVATE_KEY": {
+      "description": "Base64-encoded PEM (PKCS#8) RS256 private key for Ory Polis id_token signing.",
+      "required": false
+    },
+    "POLIS_OPENID_PUBLIC_KEY": {
+      "description": "Base64-encoded PEM (SPKI) RS256 public key for Ory Polis id_token signing.",
+      "required": false
     },
     "SMTP_HOST": {
       "description": "SMTP server host name."

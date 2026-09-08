@@ -31,9 +31,11 @@ export class LoginPage {
     this.IDP_LOGIN_URL = `${process.env.MOCKSAML_ORIGIN}/saml/login`;
     this.ACS_URL = `${process.env.JACKSON_URL || process.env.APP_URL}/api/oauth/saml`;
 
-    this.emailBox = this.page.getByPlaceholder('Email');
-    this.passwordBox = this.page.getByPlaceholder('Password');
-    this.signInButton = this.page.getByRole('button', { name: 'Sign in' });
+    this.emailBox = this.page.locator('input[name="identifier"]');
+    this.passwordBox = this.page.locator('input[name="password"]');
+    this.signInButton = this.page.getByRole('button', {
+      name: 'Sign in with password',
+    });
     this.continueWithSSOButton = this.page.getByRole('button', {
       name: 'Continue with SSO',
     });
@@ -92,7 +94,7 @@ export class LoginPage {
   }
 
   async credentialLogin(email: string, password: string) {
-    await expect(this.welcomeBackHeading).toBeVisible();
+    await expect(this.emailBox).toBeVisible();
     await this.emailBox.fill(email);
     await this.passwordBox.fill(password);
     await this.signInButton.click();
@@ -131,11 +133,13 @@ export class LoginPage {
   async logout(name: string) {
     await this.page.locator('button').filter({ hasText: name }).click();
     await this.page.getByRole('button', { name: 'Sign out' }).click();
-    await expect(this.welcomeBackHeading).toBeVisible();
+    await this.page.waitForURL(/\/auth\/login/);
+    await expect(this.emailBox).toBeVisible();
   }
 
   async isLoggedOut() {
-    await expect(this.welcomeBackHeading).toBeVisible();
+    await this.page.waitForURL(/\/auth\/login/);
+    await expect(this.emailBox).toBeVisible();
   }
 
   async gotoInviteLink(invitationLink: string, invitingCompany: string) {

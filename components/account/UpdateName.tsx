@@ -7,7 +7,7 @@ import type { ApiResponse } from 'types';
 import { Card } from '@/components/shared';
 import { defaultHeaders } from '@/lib/common';
 import { User } from '@prisma/client';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/orySession';
 import { useRouter } from 'next/router';
 import { updateAccountSchema } from '@/lib/zod';
 

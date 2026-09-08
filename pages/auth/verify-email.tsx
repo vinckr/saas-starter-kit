@@ -1,13 +1,27 @@
-import { AuthLayout } from '@/components/layouts';
-import { GetServerSidePropsContext } from 'next';
+import { type ReactElement } from 'react';
+import { Verification } from '@ory/elements-react/theme';
+import { useVerificationFlow } from '@ory/nextjs/pages';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import type { ReactElement } from 'react';
+import type { GetServerSidePropsContext } from 'next';
 
-const VerifyEmail = () => {
-  return <></>;
+import type { NextPageWithLayout } from 'types';
+import { AuthLayout } from '@/components/layouts';
+import { Loading } from '@/components/shared';
+import oryConfig from '@/lib/ory.config';
+
+const VerifyEmailPage: NextPageWithLayout = () => {
+  const flow = useVerificationFlow();
+
+  if (!flow) {
+    return <Loading />;
+  }
+
+  return (
+    <Verification flow={flow} config={oryConfig} components={{ Card: {} }} />
+  );
 };
 
-VerifyEmail.getLayout = function getLayout(page: ReactElement) {
+VerifyEmailPage.getLayout = function getLayout(page: ReactElement) {
   return (
     <AuthLayout heading="confirm-email" description="confirm-email-description">
       {page}
@@ -15,11 +29,9 @@ VerifyEmail.getLayout = function getLayout(page: ReactElement) {
   );
 };
 
-export const getServerSideProps = async (
-  context: GetServerSidePropsContext
-) => {
-  const { locale }: GetServerSidePropsContext = context;
-
+export const getServerSideProps = async ({
+  locale,
+}: GetServerSidePropsContext) => {
   return {
     props: {
       ...(locale ? await serverSideTranslations(locale, ['common']) : {}),
@@ -27,4 +39,4 @@ export const getServerSideProps = async (
   };
 };
 
-export default VerifyEmail;
+export default VerifyEmailPage;
