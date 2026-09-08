@@ -80,7 +80,7 @@ jobs:
       - name: Install playwright browser dependencies
         run: npx playwright install chromium
       - name: e2e tests
-        run: npx playwright test -x
+        run: npm run test:e2e:ory
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:

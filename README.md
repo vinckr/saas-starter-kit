@@ -252,11 +252,6 @@ Per-team SAML/OIDC SSO and SCIM directory sync are provided by embedded [Ory Pol
 - Payments
 - Security Headers
 
-## ➡️ Coming Soon
-
-- Billing & subscriptions
-- Unit and integration tests
-
 ## ✨ Contributing
 
 Thanks for taking the time to contribute! Contributions make the open-source community a fantastic place to learn, inspire, and create. Any contributions you make are greatly appreciated.

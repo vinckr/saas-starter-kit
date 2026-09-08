@@ -56,6 +56,19 @@ test.describe('Ory core authentication', () => {
     await expect(page).not.toHaveURL(/\/auth\/login/);
   });
 
+  test('logout invalidates the Kratos session', async ({ page }) => {
+    const email = unique();
+    await register(page, email);
+    await page.goto('/dashboard');
+
+    await page.getByRole('button', { name: 'Core Tester' }).click();
+    await page.getByRole('button', { name: 'Sign out' }).click();
+    await page.waitForURL(/\/auth\/login/);
+
+    await page.goto('/dashboard');
+    await page.waitForURL(/\/auth\/login/);
+  });
+
   test('login with wrong password shows an error and stays on login', async ({
     page,
   }) => {
