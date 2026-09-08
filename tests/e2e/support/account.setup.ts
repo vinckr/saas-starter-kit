@@ -22,8 +22,7 @@ const setup = base.extend<LoginFixture>({
   },
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-setup('Sign up', async ({ joinPage, page, loginPage }) => {
+setup('Sign up', async ({ joinPage }) => {
   await purgeOryIdentities();
   await joinPage.goto();
   await joinPage.signUp();

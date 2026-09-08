@@ -13,7 +13,6 @@ export class LoginPage {
   private readonly continueWithSSOLink: Locator;
   private readonly ssoEmailBox: Locator;
   private readonly slugInput: Locator;
-  private readonly welcomeBackHeading: Locator;
   private readonly multipleTeamErrorText: Locator;
   private readonly createNewAccountButton: Locator;
   private readonly yourNameInput: Locator;
@@ -44,9 +43,6 @@ export class LoginPage {
     });
     this.ssoEmailBox = this.page.getByPlaceholder('user@boxyhq.com');
     this.slugInput = this.page.getByPlaceholder('boxyhq');
-    this.welcomeBackHeading = this.page.getByText('Welcome back', {
-      exact: true,
-    });
     this.multipleTeamErrorText = this.page.getByText(
       'User belongs to multiple'
     );
