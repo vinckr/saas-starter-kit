@@ -60,10 +60,11 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
           check-latest: true
-      - run: npm install
+      - run: npm ci
       - run: npm run check-lint
       - run: npm run check-format
       - run: npm run check-locale
+      - run: npm run check-unused
       - run: npm run test
       - run: npm run build-ci
       - run: npm run check-types
@@ -80,7 +81,7 @@ jobs:
       - name: Install playwright browser dependencies
         run: npx playwright install chromium
       - name: e2e tests
-        run: npm run test:e2e:ory
+        run: npm run test:e2e
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:

@@ -4,7 +4,7 @@ const { withSentryConfig } = require('@sentry/nextjs');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   transpilePackages: ['@ory/elements-react', '@ory/nextjs'],
   serverExternalPackages: ['@boxyhq/saml-jackson', 'jose', 'openid-client'],
   images: {

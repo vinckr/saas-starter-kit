@@ -25,6 +25,26 @@ async function login(page: Page, email: string) {
 }
 
 test.describe('Ory core authentication', () => {
+  test('login page loads one Ory flow and renders the standard form', async ({
+    page,
+  }) => {
+    let flowRequests = 0;
+    page.on('request', (request) => {
+      if (
+        request.url().includes('/self-service/login/browser') &&
+        request.method() === 'GET'
+      ) {
+        flowRequests += 1;
+      }
+    });
+
+    await page.goto('/auth/login');
+    await expect(page.locator('input[name="identifier"]')).toBeVisible({
+      timeout: 15000,
+    });
+    expect(flowRequests).toBe(1);
+  });
+
   test('unauthenticated access to a protected route redirects to login', async ({
     page,
   }) => {
