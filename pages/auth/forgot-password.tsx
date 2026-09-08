@@ -16,15 +16,11 @@ const ForgotPasswordPage: NextPageWithLayout = () => {
     return <Loading />;
   }
 
-  return <Recovery flow={flow} config={oryConfig} components={{ Card: {} }} />;
+  return <Recovery flow={flow} config={oryConfig} />;
 };
 
 ForgotPasswordPage.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <AuthLayout heading="reset-password" description="email-reset-instructions">
-      {page}
-    </AuthLayout>
-  );
+  return <AuthLayout>{page}</AuthLayout>;
 };
 
 export const getServerSideProps = async ({

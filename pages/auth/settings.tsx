@@ -16,15 +16,11 @@ const AuthSettingsPage: NextPageWithLayout = () => {
     return <Loading />;
   }
 
-  return <Settings flow={flow} config={oryConfig} components={{ Card: {} }} />;
+  return <Settings flow={flow} config={oryConfig} />;
 };
 
 AuthSettingsPage.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <AuthLayout heading="account" description="manage-your-account">
-      {page}
-    </AuthLayout>
-  );
+  return <AuthLayout>{page}</AuthLayout>;
 };
 
 export const getServerSideProps = async ({

@@ -16,17 +16,11 @@ const VerifyEmailPage: NextPageWithLayout = () => {
     return <Loading />;
   }
 
-  return (
-    <Verification flow={flow} config={oryConfig} components={{ Card: {} }} />
-  );
+  return <Verification flow={flow} config={oryConfig} />;
 };
 
 VerifyEmailPage.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <AuthLayout heading="confirm-email" description="confirm-email-description">
-      {page}
-    </AuthLayout>
-  );
+  return <AuthLayout>{page}</AuthLayout>;
 };
 
 export const getServerSideProps = async ({

@@ -16,20 +16,11 @@ const JoinPage: NextPageWithLayout = () => {
     return <Loading />;
   }
 
-  return (
-    <Registration flow={flow} config={oryConfig} components={{ Card: {} }} />
-  );
+  return <Registration flow={flow} config={oryConfig} />;
 };
 
 JoinPage.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <AuthLayout
-      heading="create-your-account"
-      description="start-integrating-users"
-    >
-      {page}
-    </AuthLayout>
-  );
+  return <AuthLayout>{page}</AuthLayout>;
 };
 
 export const getServerSideProps = async ({

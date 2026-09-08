@@ -21,7 +21,7 @@ const LoginPage: NextPageWithLayout = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <Login flow={flow} config={oryConfig} components={{ Card: {} }} />
+      <Login flow={flow} config={oryConfig} />
       <Link href="/auth/sso" className="btn btn-outline btn-sm w-full">
         {t('continue-with-saml-sso') || 'Continue with SAML SSO'}
       </Link>
@@ -30,11 +30,7 @@ const LoginPage: NextPageWithLayout = () => {
 };
 
 LoginPage.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <AuthLayout heading="welcome-back" description="log-in-to-account">
-      {page}
-    </AuthLayout>
-  );
+  return <AuthLayout>{page}</AuthLayout>;
 };
 
 export const getServerSideProps = async ({
