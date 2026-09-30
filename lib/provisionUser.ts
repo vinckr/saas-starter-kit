@@ -6,6 +6,22 @@ import { slugify } from '@/lib/server-common';
 import { maxLengthPolicies } from '@/lib/common';
 import { Role, type User } from '@prisma/client';
 import { getIdentityTraits, type Identity } from '@/lib/ory';
+import { ApiError } from '@/lib/errors';
+
+export class EmailVerificationRequired extends ApiError {
+  constructor() {
+    super(
+      403,
+      'Verify your email address before linking or updating this account.'
+    );
+  }
+}
+
+const verifiedEmail = (identity: Identity, email: string) =>
+  identity.verifiable_addresses?.some(
+    (address) =>
+      address.verified && address.via === 'email' && address.value === email
+  ) ?? false;
 
 const normalizeName = (name?: string) =>
   name ? name.substring(0, maxLengthPolicies.name) : name;
@@ -46,42 +62,52 @@ const createDefaultTeam = async (
   return team;
 };
 
-const ensureTeamMembership = async (userId: string, teamId: string) => {
-  const team = await prisma.team.findUnique({ where: { id: teamId } });
-  if (!team) return false;
-
-  await prisma.teamMember.upsert({
-    where: { teamId_userId: { teamId, userId } },
-    create: { teamId, userId, role: team.defaultRole },
-    update: {},
-  });
-  return true;
-};
-
 export const getOrCreateLocalUser = async (
   identity: Identity,
-  opts?: { ssoTenant?: string }
+  opts?: { skipDefaultTeam?: boolean }
 ): Promise<User> => {
   const oryId = identity.id;
   const { email, name } = getIdentityTraits(identity);
 
   const linked = await prisma.user.findUnique({ where: { oryId } });
   if (linked) {
-    if (opts?.ssoTenant) await ensureTeamMembership(linked.id, opts.ssoTenant);
-    return linked;
+    if (email !== linked.email && !verifiedEmail(identity, email)) {
+      throw new EmailVerificationRequired();
+    }
+    const nextName = normalizeName(name) || linked.name;
+    if (email === linked.email && nextName === linked.name) return linked;
+    return prisma.user.update({
+      where: { id: linked.id },
+      data: { email, name: nextName },
+    });
   }
 
   if (email) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      const updated = await prisma.user.update({
-        where: { id: existing.id },
+      if (existing.oryId) {
+        throw new ApiError(
+          409,
+          'This account is linked to a different identity.'
+        );
+      }
+      if (!verifiedEmail(identity, email))
+        throw new EmailVerificationRequired();
+      const updated = await prisma.user.updateMany({
+        where: { id: existing.id, oryId: null },
         data: { oryId },
       });
-      if (opts?.ssoTenant) {
-        await ensureTeamMembership(updated.id, opts.ssoTenant);
+      if (updated.count !== 1) {
+        const current = await prisma.user.findUnique({
+          where: { id: existing.id },
+        });
+        if (current?.oryId === oryId) return current;
+        throw new ApiError(
+          409,
+          'Account identity changed. Please sign in again.'
+        );
       }
-      return updated;
+      return { ...existing, oryId };
     }
   }
 
@@ -93,10 +119,7 @@ export const getOrCreateLocalUser = async (
     },
   });
 
-  if (
-    opts?.ssoTenant &&
-    (await ensureTeamMembership(user.id, opts.ssoTenant))
-  ) {
+  if (opts?.skipDefaultTeam) {
     recordMetric('user.signup');
     return user;
   }

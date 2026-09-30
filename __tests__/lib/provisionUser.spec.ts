@@ -7,7 +7,12 @@ const slackAlert = jest.fn();
 
 jest.mock('lib/prisma', () => ({
   prisma: {
-    user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
+    user: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
     team: {
       count: jest.fn(),
       create: jest.fn(),
@@ -29,7 +34,12 @@ import { getOrCreateLocalUser } from 'lib/provisionUser';
 
 // Typed handle to the mocked prisma client.
 const db = prisma as unknown as {
-  user: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
+  user: {
+    findUnique: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    updateMany: jest.Mock;
+  };
   team: { count: jest.Mock; create: jest.Mock; findUnique: jest.Mock };
   teamMember: { create: jest.Mock; upsert: jest.Mock };
 };
@@ -56,41 +66,109 @@ describe('Lib - getOrCreateLocalUser', () => {
     expect(db.team.create).not.toHaveBeenCalled();
   });
 
-  it('adds an SSO user to the requested existing team', async () => {
-    const existing = { id: 'local-1', oryId: 'ory-1', email: 'a@b.com' };
-    db.user.findUnique.mockResolvedValueOnce(existing);
-    db.team.findUnique.mockResolvedValueOnce({
-      id: 'team-1',
-      defaultRole: Role.MEMBER,
+  it('rejects an unverified email collision without changing the existing account', async () => {
+    db.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: 'victim',
+      oryId: null,
+      email: 'victim@example.com',
     });
+    await expect(
+      getOrCreateLocalUser(
+        identity('attacker', { email: 'victim@example.com' })
+      )
+    ).rejects.toThrow(/Verify your email/);
+    expect(db.user.updateMany).not.toHaveBeenCalled();
+    expect(db.teamMember.upsert).not.toHaveBeenCalled();
+  });
 
-    await getOrCreateLocalUser(identity('ory-1', { email: 'a@b.com' }), {
-      ssoTenant: 'team-1',
+  const verified = (id: string, email: string): Identity => ({
+    ...identity(id, { email }),
+    verifiable_addresses: [
+      {
+        id: 'address',
+        value: email,
+        via: 'email',
+        verified: true,
+        status: 'completed',
+      },
+    ],
+  });
+
+  it('links a mailbox-verified legacy user conditionally', async () => {
+    db.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: 'legacy',
+      email: 'legacy@example.com',
+      oryId: null,
     });
+    db.user.updateMany.mockResolvedValueOnce({ count: 1 });
+    const result = await getOrCreateLocalUser(
+      verified('ory-2', 'legacy@example.com')
+    );
+    expect(db.user.updateMany).toHaveBeenCalledWith({
+      where: { id: 'legacy', oryId: null },
+      data: { oryId: 'ory-2' },
+    });
+    expect(result.oryId).toBe('ory-2');
+    expect(db.team.create).not.toHaveBeenCalled();
+  });
 
-    expect(db.teamMember.upsert).toHaveBeenCalledWith({
-      where: { teamId_userId: { teamId: 'team-1', userId: 'local-1' } },
-      create: { teamId: 'team-1', userId: 'local-1', role: Role.MEMBER },
-      update: {},
+  it('never overwrites an existing identity link even for a verified address', async () => {
+    db.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'victim', oryId: 'original' });
+    await expect(
+      getOrCreateLocalUser(verified('attacker', 'victim@example.com'))
+    ).rejects.toThrow(/different identity/);
+    expect(db.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects a concurrent identity-link conflict', async () => {
+    db.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'victim', oryId: null });
+    db.user.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(
+      getOrCreateLocalUser(verified('attacker', 'victim@example.com'))
+    ).rejects.toThrow(/identity changed/);
+  });
+
+  it('does not accept verification for a different email', async () => {
+    db.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'victim', oryId: null });
+    const value = verified('attacker', 'attacker@example.com');
+    value.traits = { email: 'victim@example.com' };
+    await expect(getOrCreateLocalUser(value)).rejects.toThrow(
+      /Verify your email/
+    );
+  });
+
+  it('synchronizes a verified Ory profile change for an already-linked identity', async () => {
+    db.user.findUnique.mockResolvedValueOnce({
+      id: 'local',
+      oryId: 'ory',
+      email: 'old@example.com',
+      name: 'Old',
+    });
+    const value = verified('ory', 'new@example.com');
+    value.traits.name = 'New';
+    await getOrCreateLocalUser(value);
+    expect(db.user.update).toHaveBeenCalledWith({
+      where: { id: 'local' },
+      data: { email: 'new@example.com', name: 'New' },
     });
   });
 
-  it('links an existing user matched by email and does not create a team', async () => {
-    db.user.findUnique
-      .mockResolvedValueOnce(null) // by oryId
-      .mockResolvedValueOnce({ id: 'local-2', email: 'c@d.com' }); // by email
-    db.user.update.mockResolvedValueOnce({ id: 'local-2', oryId: 'ory-2' });
-
-    const result = await getOrCreateLocalUser(
-      identity('ory-2', { email: 'c@d.com' })
-    );
-
-    expect(db.user.update).toHaveBeenCalledWith({
-      where: { id: 'local-2' },
-      data: { oryId: 'ory-2' },
+  it('requires verification before synchronizing a changed email', async () => {
+    db.user.findUnique.mockResolvedValueOnce({
+      id: 'local',
+      oryId: 'ory',
+      email: 'old@example.com',
     });
-    expect(db.team.create).not.toHaveBeenCalled();
-    expect(result.oryId).toBe('ory-2');
+    await expect(
+      getOrCreateLocalUser(identity('ory', { email: 'new@example.com' }))
+    ).rejects.toThrow(/Verify your email/);
+    expect(db.user.update).not.toHaveBeenCalled();
   });
 
   it('creates a new user + default OWNER team on first login', async () => {

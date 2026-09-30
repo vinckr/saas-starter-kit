@@ -198,6 +198,12 @@ Per-team SAML/OIDC SSO and SCIM directory sync are provided by embedded [Ory Pol
 2. Customers configure their SAML/OIDC connections from the team settings page (`/teams/[slug]/sso`), backed by the in-app [`@boxyhq/react-ui`](https://github.com/boxyhq/react-ui) components.
 3. **Local SSO note:** the OIDC issuer must be reachable and identical from both the browser and the Kratos container. For local dev set `APP_URL=http://host.docker.internal:4002` and add `127.0.0.1 host.docker.internal` to `/etc/hosts` (compose already maps the host for Kratos via `extra_hosts`).
 
+SSO team membership is granted only after a verified Polis exchange is matched to the Ory session's `sso` credential. The tenant cookie is a routing hint. The app needs access to the Ory admin identity API (`ORY_ADMIN_URL`, and `ORY_API_KEY` where required) to read that credential. Grants are short-lived and consumed once; reading an old session cannot restore a removed membership.
+
+Polis subjects are scoped by tenant and product. If you already used an earlier revision of this migration with unscoped `sso` credentials, migrate those credential subjects to the scoped value after verifying their originating tenant, or relink through a verified account recovery process before rollout. Do not infer the tenant from an email address or browser cookie.
+
+Legacy/SCIM accounts require a matching verified Ory email before their first identity link. Profile name and email changes use `/auth/settings`; Prisma receives verified email changes on the next session read. IdP-initiated login validates the unsolicited code and starts an Ory-controlled SSO round trip, using the existing IdP session where available.
+
 ### Svix Webhooks
 
 1. Create an account on [Svix](https://www.svix.com/)

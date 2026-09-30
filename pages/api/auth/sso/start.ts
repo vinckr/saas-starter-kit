@@ -1,6 +1,6 @@
 import env from '@/lib/env';
 import { ssoManager } from '@/lib/jackson/sso';
-import { SSO_TENANT_COOKIE } from '@/lib/sso';
+import { tenantCookie } from '@/lib/sso';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const sso = ssoManager();
@@ -31,9 +31,7 @@ export default async function handler(
       throw new Error('No SSO connections found for this team.');
     }
 
-    res.setHeader('Set-Cookie', [
-      `${SSO_TENANT_COOKIE}=${encodeURIComponent(teamId)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=300`,
-    ]);
+    res.setHeader('Set-Cookie', [tenantCookie(teamId)]);
 
     res.status(200).json({ data: { ok: true } });
   } catch (err: any) {

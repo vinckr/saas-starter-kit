@@ -13,7 +13,8 @@ export const injectTenant = (
   }
   return {
     ...params,
-    client_id: `tenant=${tenant}&product=${product}`,
+    tenant,
+    product,
   };
 };
 

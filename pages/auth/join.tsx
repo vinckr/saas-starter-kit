@@ -8,6 +8,8 @@ import type { NextPageWithLayout } from 'types';
 import { AuthLayout } from '@/components/layouts';
 import { Loading } from '@/components/shared';
 import oryConfig from '@/lib/ory.config';
+import { authRedirect } from '@/lib/authRedirect';
+import env from '@/lib/env';
 
 const JoinPage: NextPageWithLayout = () => {
   const flow = useRegistrationFlow();
@@ -25,7 +27,10 @@ JoinPage.getLayout = function getLayout(page: ReactElement) {
 
 export const getServerSideProps = async ({
   locale,
+  query,
 }: GetServerSidePropsContext) => {
+  const redirect = authRedirect(query, '/auth/join', env.appUrl);
+  if (redirect) return { redirect };
   return {
     props: {
       ...(locale ? await serverSideTranslations(locale, ['common']) : {}),

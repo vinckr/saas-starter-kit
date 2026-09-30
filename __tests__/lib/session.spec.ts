@@ -3,6 +3,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 const toSession = jest.fn();
 const getOrCreateLocalUser = jest.fn();
 const teamMemberFindMany = jest.fn();
+const getSSOGrant = jest.fn().mockResolvedValue(null);
+const applySSOGrant = jest.fn();
+jest.mock('lib/ssoGrant', () => ({
+  getSSOGrant: (...a: unknown[]) => getSSOGrant(...a),
+  applySSOGrant: (...a: unknown[]) => applySSOGrant(...a),
+}));
 
 jest.mock('lib/ory', () => ({
   ory: { toSession: (...a: unknown[]) => toSession(...a) },
@@ -54,11 +60,15 @@ describe('Lib - getSession (Ory-backed)', () => {
     });
     teamMemberFindMany.mockResolvedValueOnce([{ teamId: 't1', role: 'OWNER' }]);
 
-    const session = await getSession(makeReq('ory_session=x'), res);
+    const session = await getSession(
+      makeReq('ory_session=x; sso_tenant=forged-team'),
+      res
+    );
+    expect(applySSOGrant).not.toHaveBeenCalled();
 
     expect(getOrCreateLocalUser).toHaveBeenCalledWith(
       { id: 'ory-9', traits: { email: 'z@corp.com', name: 'Zed' } },
-      { ssoTenant: undefined }
+      { skipDefaultTeam: false }
     );
     expect(session).toEqual({
       user: {

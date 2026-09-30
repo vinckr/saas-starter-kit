@@ -1,4 +1,5 @@
 import { Role } from '@prisma/client';
+jest.mock('lib/session', () => ({ getSession: jest.fn() }));
 import { throwIfNotAllowed } from 'models/user';
 
 describe('RBAC - throwIfNotAllowed (unchanged by the Ory migration)', () => {

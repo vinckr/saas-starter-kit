@@ -25,6 +25,7 @@ const opts = {
   idpDiscoveryPath: '/auth/sso/idp-select',
   idpEnabled: true,
   openid: {
+    subjectPrefix: true,
     jwsAlg: env.jackson.openid.jwsAlg,
     ...(env.jackson.openid.privateKey && env.jackson.openid.publicKey
       ? {

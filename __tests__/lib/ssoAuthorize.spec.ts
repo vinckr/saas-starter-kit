@@ -35,9 +35,11 @@ describe('SSO authorize - injectTenant', () => {
     nonce: 'n-123',
   };
 
-  it('rewrites client_id to the Polis tenant/product form when a tenant is present', () => {
+  it('routes the tenant without changing the OIDC audience', () => {
     const out = injectTenant(base, 'team-42', 'boxyhq');
-    expect(out.client_id).toBe('tenant=team-42&product=boxyhq');
+    expect(out.client_id).toBe('dummy');
+    expect(out.tenant).toBe('team-42');
+    expect(out.product).toBe('boxyhq');
   });
 
   it('preserves all other Kratos-supplied params (redirect_uri, state, scope, nonce)', () => {
@@ -94,7 +96,9 @@ describe('SSO authorize handler', () => {
 
     expect(authorize).toHaveBeenCalledWith(
       expect.objectContaining({
-        client_id: 'tenant=team/42&product=boxyhq',
+        client_id: 'dummy',
+        tenant: 'team/42',
+        product: 'boxyhq',
         state: 'state-1',
       })
     );

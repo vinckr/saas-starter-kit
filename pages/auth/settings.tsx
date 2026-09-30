@@ -1,4 +1,5 @@
 import { type ReactElement } from 'react';
+import { SessionProvider } from '@ory/elements-react/client';
 import { Settings } from '@ory/elements-react/theme';
 import { useSettingsFlow } from '@ory/nextjs/pages';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -16,7 +17,11 @@ const AuthSettingsPage: NextPageWithLayout = () => {
     return <Loading />;
   }
 
-  return <Settings flow={flow} config={oryConfig} />;
+  return (
+    <SessionProvider>
+      <Settings flow={flow} config={oryConfig} />
+    </SessionProvider>
+  );
 };
 
 AuthSettingsPage.getLayout = function getLayout(page: ReactElement) {

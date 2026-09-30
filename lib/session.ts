@@ -8,7 +8,7 @@ import type { Role } from '@prisma/client';
 import { ory } from '@/lib/ory';
 import { getOrCreateLocalUser } from '@/lib/provisionUser';
 import { prisma } from '@/lib/prisma';
-import { SSO_TENANT_COOKIE, readCookie } from '@/lib/sso';
+import { getSSOGrant, applySSOGrant } from '@/lib/ssoGrant';
 
 export type AppSession = {
   user: {
@@ -42,8 +42,11 @@ export const getSession = async (
     return null;
   }
 
-  const ssoTenant = readCookie(cookie, SSO_TENANT_COOKIE);
-  const user = await getOrCreateLocalUser(session.identity, { ssoTenant });
+  const grant = await getSSOGrant(session);
+  const user = await getOrCreateLocalUser(session.identity, {
+    skipDefaultTeam: Boolean(grant),
+  });
+  if (grant) await applySSOGrant(user.id, grant);
 
   const roles = await prisma.teamMember.findMany({
     where: { userId: user.id },

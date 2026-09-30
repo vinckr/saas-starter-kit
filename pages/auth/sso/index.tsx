@@ -5,6 +5,7 @@ import { GetServerSidePropsContext } from 'next';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { type ReactElement, useState } from 'react';
 import { Button } from 'react-daisyui';
 import { toast } from 'react-hot-toast';
@@ -13,42 +14,13 @@ import * as Yup from 'yup';
 import Head from 'next/head';
 import { maxLengthPolicies } from '@/lib/common';
 
-async function startKratosSSO() {
-  const origin = window.location.origin;
-
-  const flowRes = await fetch(`${origin}/self-service/login/browser`, {
-    headers: { accept: 'application/json' },
-    credentials: 'include',
-  });
-  const flow = await flowRes.json();
-  const csrfToken = flow?.ui?.nodes?.find(
-    (n: any) => n?.attributes?.name === 'csrf_token'
-  )?.attributes?.value;
-
-  const submitRes = await fetch(flow.ui.action, {
-    method: 'POST',
-    headers: { accept: 'application/json', 'content-type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({
-      method: 'oidc',
-      provider: 'sso',
-      csrf_token: csrfToken,
-    }),
-  });
-
-  const body = await submitRes.json().catch(() => ({}));
-  const redirect = body?.redirect_browser_to;
-
-  if (redirect) {
-    window.location.href = redirect;
-    return;
-  }
-
-  throw new Error('Unable to start SSO login.');
-}
+import { startKratosSSO } from '@/lib/startSSO';
 
 const SSO: NextPageWithLayout = () => {
   const { t } = useTranslation('common');
+  const { query } = useRouter();
+  const returnTo =
+    typeof query.return_to === 'string' ? query.return_to : undefined;
   const [useEmail, setUseEmail] = useState(true);
 
   const formik = useFormik({
@@ -103,7 +75,7 @@ const SSO: NextPageWithLayout = () => {
       }
 
       try {
-        await startKratosSSO();
+        await startKratosSSO(returnTo);
       } catch (err: any) {
         toast.error(err.message || 'Unable to start SSO login.');
       }
@@ -154,7 +126,13 @@ const SSO: NextPageWithLayout = () => {
         </form>
         <div className="divider"></div>
         <div className="space-y-3">
-          <Link href="/auth/login" className="btn btn-outline w-full">
+          <Link
+            href={{
+              pathname: '/auth/login',
+              query: returnTo ? { return_to: returnTo } : {},
+            }}
+            className="btn btn-outline w-full"
+          >
             {t('sign-in-with-password')}
           </Link>
         </div>

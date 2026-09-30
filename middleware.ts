@@ -100,7 +100,7 @@ export default async function middleware(req: NextRequest) {
   }
 
   const redirectUrl = new URL('/auth/login', req.url);
-  redirectUrl.searchParams.set('callbackUrl', encodeURI(req.url));
+  redirectUrl.searchParams.set('return_to', req.url);
 
   const cookie = req.headers.get('cookie') || '';
   let authenticated = false;

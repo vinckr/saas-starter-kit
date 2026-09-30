@@ -43,21 +43,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const load = async (): Promise<ClientSession> => {
     try {
-      const session = await frontend.toSession();
-      const traits = (session.identity?.traits ?? {}) as {
-        email?: string;
-        name?: string;
-      };
-      const next: ClientSession = {
-        user: {
-          id: session.identity?.id ?? '',
-          name: traits.name,
-          email: traits.email,
-          image: null,
-        },
-      };
+      const response = await fetch('/api/auth/session', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        if (
+          body.error?.redirectTo &&
+          !window.location.pathname.startsWith('/auth/')
+        ) {
+          const redirect = new URL(
+            body.error.redirectTo,
+            window.location.origin
+          );
+          redirect.searchParams.set('return_to', window.location.href);
+          window.location.assign(redirect.href);
+        }
+        throw new Error('Unable to load session');
+      }
+      const next = body as ClientSession;
       setData(next);
-      setStatus('authenticated');
+      setStatus(next ? 'authenticated' : 'unauthenticated');
       return next;
     } catch {
       setData(null);
